@@ -10,7 +10,7 @@ public class PrimaryController {
     @FXML
     void sendWarning(ActionEvent event) {
     	try {
-			SimpleClient.getClient().sendToServer("#warning");
+			SimpleClient.getClient("", 3000).sendToServer("#warning");
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -20,7 +20,7 @@ public class PrimaryController {
 	@FXML
 	void initialize(){
 		try {
-			SimpleClient.getClient().sendToServer("add client");
+			SimpleClient.getClient("", 3000).sendToServer("add client");
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
