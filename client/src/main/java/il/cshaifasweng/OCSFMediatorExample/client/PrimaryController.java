@@ -1,73 +1,77 @@
 package il.cshaifasweng.OCSFMediatorExample.client;
 
+import il.cshaifasweng.OCSFMediatorExample.entities.gameMove;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.text.Text;
-
+import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
 
 import java.net.URL;
 import java.util.Arrays;
 import java.util.ResourceBundle;
 import java.util.ArrayList;
-import java.awt.event.ActionEvent;
+import javafx.event.ActionEvent;
+
+import static il.cshaifasweng.OCSFMediatorExample.client.SimpleClient.client;
 
 public class PrimaryController {
 
-	@FXML
-	private Button middleButton;
-
-	@FXML
-	private Button bottomLeftButton;
-
-	@FXML
-	private Button bottomMiddleButton;
-
-	@FXML
-	private Button bottomRightButton;
-
-	@FXML
-	private Text winnerText;
-
-	@FXML
-	private Button middleLeftButton;
-
-	@FXML
-	private Button middleRightButton;
-
-	@FXML
-	private Button restartButton;
-
-	@FXML
-	private AnchorPane rootPane;
-
-	@FXML
-	private Button topLeftButton;
-
-	@FXML
-	private Button topMiddleButton;
-
-	@FXML
-	private Button topRightButton;
+	@FXML private Button middleButton;
+	@FXML private Button bottomLeftButton;
+	@FXML private Button bottomMiddleButton;
+	@FXML private Button bottomRightButton;
+	@FXML private Text winnerText;
+	@FXML private Button middleLeftButton;
+	@FXML private Button middleRightButton;
+	@FXML private Button restartButton;
+	@FXML private AnchorPane rootPane;
+	@FXML private Button topLeftButton;
+	@FXML private Button topMiddleButton;
+	@FXML private Button topRightButton;
 
 	private int playerTurn = 0;
-
 	ArrayList<Button> buttons;
 
 	@FXML
-	void initialize(URL url, ResourceBundle rescourceBundle) {
-		buttons = new ArrayList<>(Arrays.asList(topLeftButton, topMiddleButton, topRightButton
-		, middleLeftButton, middleRightButton, middleButton
-		, bottomLeftButton, bottomMiddleButton, bottomRightButton, restartButton));
+	void initialize(URL url, ResourceBundle resourceBundle) {
+		EventBus.getDefault().register(this);
 
-		buttons.forEach(button -> {
+		buttons = new ArrayList<>(Arrays.asList(
+				topLeftButton, topMiddleButton, topRightButton,
+				middleLeftButton, middleButton, middleRightButton,
+				bottomLeftButton, bottomMiddleButton, bottomRightButton
+		));
+
+		int[][] positions = {
+				{0,0}, {0,1}, {0,2},
+				{1,0}, {1,1}, {1,2},
+				{2,0}, {2,1}, {2,2}
+		};
+
+		for (int i = 0; i < buttons.size(); i++) {
+			Button button = buttons.get(i);
+			button.setUserData(positions[i]);
 			setupButton(button);
 			button.setFocusTraversable(false);
+		}
+	}
+
+	private void setupButton(Button button) {
+		button.setOnMouseClicked(mouseEvent -> {
+			if (button.getText().isEmpty()) {
+				String symbol = (playerTurn % 2 == 0) ? "X" : "O";
+				int[] pos = (int[]) button.getUserData();
+				gameMove move = new gameMove(pos[0], pos[1], symbol);
+				client.sendMove(move);
+				playerTurn++;
+			}
 		});
 	}
 
 	@FXML
-	void restartGame(ActionEvent event) {
+	public void restartGame(ActionEvent event) {
 		buttons.forEach(this::resetButton);
 	}
 
@@ -77,44 +81,21 @@ public class PrimaryController {
 		winnerText.setText("Tic-Tac-Toe");
 	}
 
-	private void setupButton(Button button) {
-		button.setOnMouseClicked(mouseEvent -> {
-			setPlayerSymbol(button);
+	@Subscribe
+	public void onGameMove(gameMove move) {
+		if (move.getRow() == -1 && move.getCol() == -1) {
+			// Win or Draw message
+			winnerText.setText(move.getPlayerSymbol());
+			buttons.forEach(btn -> btn.setDisable(true));
+		} else {
+			int index = move.getRow() * 3 + move.getCol();
+			Button button = buttons.get(index);
+			button.setText(move.getPlayerSymbol());
 			button.setDisable(true);
-			checkIfGameIsOver();
-		});
-	}
-
-	public void setPlayerSymbol(Button button) {
-		if(playerTurn % 2 == 0) {
-			button.setText("X");
-			playerTurn = 1;
-		}
-		else{
-			button.setText("O");
-			playerTurn = 0;
 		}
 	}
 
-	public void checkIfGameIsOver(){
-		for (int a = 0; a < buttons.size(); a++) {
-			String line = switch(a){
-				case 0 -> topLeftButton.getText() + topMiddleButton.getText() + topRightButton.getText();
-				case 1 -> middleLeftButton.getText() + middleButton.getText() + middleRightButton.getText();
-				case 2 -> bottomLeftButton.getText() + bottomMiddleButton.getText() + bottomRightButton.getText();
-				case 3 -> topLeftButton.getText() + middleButton.getText() + bottomRightButton.getText();
-				case 4 -> topRightButton.getText() + middleButton.getText() + bottomLeftButton.getText();
-				case 5 -> topLeftButton.getText() + middleLeftButton.getText() + bottomLeftButton.getText();
-				case 6 -> topMiddleButton.getText() + middleButton.getText() + bottomMiddleButton.getText();
-				case 7 -> topRightButton.getText() + middleRightButton.getText() + bottomRightButton.getText();
-				default -> null;
-			};
-		// X wins
-		if (line.equals("XXX")){
-			winnerText.setText("X won!");
-		} else if(line.equals("OOO")) {
-			winnerText.setText("O won!");
-			}
-		}
+	public void stop() {
+		EventBus.getDefault().unregister(this);
 	}
 }
