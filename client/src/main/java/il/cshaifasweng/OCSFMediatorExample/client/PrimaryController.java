@@ -1,5 +1,6 @@
 package il.cshaifasweng.OCSFMediatorExample.client;
 
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -54,18 +55,20 @@ public class PrimaryController {
 
 	@Subscribe
 	public void onGameMove(gameMove move) {
-		if (move.getRow() == -1) {
-			String result = "DRAW".equals(move.getPlayerSymbol())
-					? "Draw!"
-					: move.getPlayerSymbol() + " wins!";
-			winnerText.setText(result);
-			buttons.forEach(b -> b.setDisable(true));
-		} else {
-			int idx = move.getRow() * 3 + move.getCol();
-			Button btn = buttons.get(idx);
-			btn.setText(move.getPlayerSymbol());
-			btn.setDisable(true);
-		}
+		Platform.runLater(() -> {
+			if (move.getRow() == -1) {
+				String result = "DRAW".equals(move.getPlayerSymbol())
+						? "Draw!"
+						: move.getPlayerSymbol() + " wins!";
+				winnerText.setText(result);
+				buttons.forEach(b -> b.setDisable(true));
+			} else {
+				int idx = move.getRow() * 3 + move.getCol();
+				Button btn = buttons.get(idx);
+				btn.setText(move.getPlayerSymbol());
+				btn.setDisable(true);
+			}
+		});
 	}
 
 	@FXML
