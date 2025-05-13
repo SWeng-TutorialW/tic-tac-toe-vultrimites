@@ -1,51 +1,67 @@
 package il.cshaifasweng.OCSFMediatorExample.client;
 
+import javafx.application.Platform;
+import java.io.IOException;
 import org.greenrobot.eventbus.EventBus;
 import il.cshaifasweng.OCSFMediatorExample.entities.gameMove;
 import il.cshaifasweng.OCSFMediatorExample.client.ocsf.AbstractClient;
 
 public class SimpleClient extends AbstractClient {
-	
-	public static SimpleClient client = null;
+	private static SimpleClient client;
+	private String mySymbol;
 
 	private SimpleClient(String host, int port) {
 		super(host, port);
 	}
 
-	@Override
-	protected void handleMessageFromServer(Object msg) {
-		if (msg instanceof gameMove) {
-			EventBus.getDefault().post(msg);
-		} else if (msg instanceof String) {
-			String str = (String) msg;
-			if (str.equals("start game")) {
-				// Switch to the primary game view when both players have connected
-				javafx.application.Platform.runLater(() -> {
-					try {
-						il.cshaifasweng.OCSFMediatorExample.client.App.setRoot("primary");
-					} catch (Exception e) {
-						e.printStackTrace();
-					}
-				});
-			} else {
-				System.out.println("Received from server: " + str);
-			}
-		}
-	}
-
-	public static SimpleClient getClient(String host, int port){
-		if (client == null){
+	public static SimpleClient getClient(String host, int port) {
+		if (client == null) {
 			client = new SimpleClient(host, port);
 		}
 		return client;
 	}
 
-	public void sendMove(gameMove move){
-		try{
-			this.sendToServer(move);
-		} catch (Exception e) {
-			System.err.println("Failed to send move: " + e.getMessage());
+	public static SimpleClient getClient() {
+		return client;
+	}
+
+	public String getMySymbol() {
+		return mySymbol;
+	}
+
+	@Override
+	protected void handleMessageFromServer(Object msg) {
+		if (msg instanceof gameMove) {
+			EventBus.getDefault().post((gameMove) msg);
+		} else if (msg instanceof String) {
+			String m = (String) msg;
+			if (m.startsWith("ASSIGN:")) {
+				mySymbol = m.substring(7);
+				System.out.println("Symbol: " + mySymbol);
+			} else if (m.equals("start game")) {
+				Platform.runLater(() -> {
+					try {
+						App.setRoot("primary");
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+				});
+			} else if (m.equals("Game is full")) {
+				System.err.println("Game is full");
+				Platform.exit();
+			} else if (m.equals("Not your turn")) {
+				System.err.println("Not your turn");
+			} else {
+				System.out.println("Server: " + m);
+			}
 		}
 	}
 
+	public void sendMove(gameMove move) {
+		try {
+			sendToServer(move);
+		} catch (IOException e) {
+			System.err.println("Send failed: " + e.getMessage());
+		}
+	}
 }
