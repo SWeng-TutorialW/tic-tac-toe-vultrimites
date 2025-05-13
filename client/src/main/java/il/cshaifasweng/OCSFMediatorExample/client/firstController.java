@@ -11,7 +11,7 @@ import java.io.IOException;
 
 import static il.cshaifasweng.OCSFMediatorExample.client.App.setRoot;
 import static il.cshaifasweng.OCSFMediatorExample.client.SimpleClient.client;
-
+//
 public class firstController {
 
     @FXML private TextField IPtext;
